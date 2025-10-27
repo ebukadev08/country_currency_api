@@ -145,7 +145,6 @@ export const getStatus = async (req, res) => {
   });
 };
 
-
 export const getSummaryImage = async (req, res) => {
   if (fs.existsSync("cache/summary.png")) {
     res.sendFile(process.cwd() + "/cache/summary.png");
