@@ -7,29 +7,25 @@ const COUNTRIES_API =
   "https://restcountries.com/v2/all?fields=name,capital,region,population,flag,currencies";
 const RATES_API = "https://open.er-api.com/v6/latest/USD";
 
-// ---------------- REFRESH ----------------
 export const refreshCountries = async (req, res) => {
   try {
     console.log("🔄 Refreshing countries and exchange rates...");
 
-    // Fetch both APIs with explicit timeouts
     const [countriesRes, ratesRes] = await Promise.allSettled([
       axios.get(COUNTRIES_API, { timeout: 15000 }),
       axios.get(RATES_API, { timeout: 15000 }),
     ]);
 
-    // --- Handle country API failure ---
     if (countriesRes.status !== "fulfilled" || countriesRes.value.status !== 200) {
-      console.error("❌ RestCountries API failed:", countriesRes.reason?.message);
+      console.error("RestCountries API failed:", countriesRes.reason?.message);
       return res.status(503).json({
         error: "External data source unavailable",
         details: "Could not fetch data from RestCountries API",
       });
     }
 
-    // --- Handle exchange API failure ---
     if (ratesRes.status !== "fulfilled" || ratesRes.value.status !== 200) {
-      console.error("❌ ExchangeRate API failed:", ratesRes.reason?.message);
+      console.error("ExchangeRate API failed:", ratesRes.reason?.message);
       return res.status(503).json({
         error: "External data source unavailable",
         details: "Could not fetch data from Exchange Rate API",
@@ -40,7 +36,6 @@ export const refreshCountries = async (req, res) => {
     const rates = ratesRes.value.data?.rates || {};
     const now = new Date();
 
-    // --- Cache all countries ---
     for (const c of countries) {
       const name = c.name;
       const population = c.population || 0;
@@ -81,21 +76,19 @@ export const refreshCountries = async (req, res) => {
       );
     }
 
-    // --- Update metadata ---
     await db.query("DELETE FROM meta");
     await db.query("INSERT INTO meta (last_refreshed_at) VALUES (?)", [now]);
 
-    // --- Generate summary image ---
     const [rows] = await db.query("SELECT * FROM countries");
     await generateSummaryImage(rows, now);
 
-    console.log("✅ Refresh successful at", now.toISOString());
+    console.log("Refresh successful at", now.toISOString());
     res.json({
       message: "Countries refreshed successfully",
       last_refreshed_at: now,
     });
   } catch (error) {
-    console.error("❌ Refresh failed:", error.message);
+    console.error("Refresh failed:", error.message);
     res.status(503).json({
       error: "External data source unavailable",
       details: error.message || "Could not fetch data from external APIs",
@@ -103,7 +96,7 @@ export const refreshCountries = async (req, res) => {
   }
 };
 
-// ---------------- GET COUNTRIES ----------------
+
 export const getCountries = async (req, res) => {
   let query = "SELECT * FROM countries WHERE 1=1";
   const params = [];
@@ -124,7 +117,6 @@ export const getCountries = async (req, res) => {
   res.json(rows);
 };
 
-// ---------------- GET SINGLE COUNTRY ----------------
 export const getCountry = async (req, res) => {
   const [rows] = await db.query(
     "SELECT * FROM countries WHERE LOWER(name)=LOWER(?)",
@@ -134,7 +126,6 @@ export const getCountry = async (req, res) => {
   res.json(rows[0]);
 };
 
-// ---------------- DELETE COUNTRY ----------------
 export const deleteCountry = async (req, res) => {
   const [result] = await db.query(
     "DELETE FROM countries WHERE LOWER(name)=LOWER(?)",
@@ -145,7 +136,6 @@ export const deleteCountry = async (req, res) => {
   res.json({ message: "Country deleted" });
 };
 
-// ---------------- STATUS ----------------
 export const getStatus = async (req, res) => {
   const [[count]] = await db.query("SELECT COUNT(*) AS total FROM countries");
   const [[meta]] = await db.query("SELECT * FROM meta LIMIT 1");
@@ -155,7 +145,7 @@ export const getStatus = async (req, res) => {
   });
 };
 
-// ---------------- IMAGE ----------------
+
 export const getSummaryImage = async (req, res) => {
   if (fs.existsSync("cache/summary.png")) {
     res.sendFile(process.cwd() + "/cache/summary.png");
@@ -164,7 +154,6 @@ export const getSummaryImage = async (req, res) => {
   }
 };
 
-// ---------------- IMAGE GENERATION (JIMP) ----------------
 export async function generateSummaryImage(countries, timestamp) {
   const total = countries.length;
   const top5 = countries
@@ -172,9 +161,9 @@ export async function generateSummaryImage(countries, timestamp) {
     .sort((a, b) => b.estimated_gdp - a.estimated_gdp)
     .slice(0, 5);
 
-  // ✅ Correct Jimp usage (no Jimp.Jimp)
-  const image = await new Jimp(800, 600, 0x000000ff); // black background
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // ✅ fix here
+ 
+  const image = await new Jimp(800, 600, 0x000000ff);
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); 
 
   await image.print(font, 20, 30, `Total Countries: ${total}`);
   await image.print(font, 20, 60, `Last Refresh: ${timestamp.toISOString()}`);
