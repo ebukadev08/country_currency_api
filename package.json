@@ -18,7 +18,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "jimp": "^1.6.0",
+    "jimp": "^0.22.10",
     "mysql2": "^3.14.4",
     "node-cache": "^5.1.2",
     "node-html-to-image": "^5.0.0",

@@ -1,7 +1,7 @@
 import { db } from "../db.js";
 import axios from "axios";
 import fs from "fs";
-import * as Jimp from "jimp";
+import Jimp from "jimp";
 
 const COUNTRIES_API =
   "https://restcountries.com/v2/all?fields=name,capital,region,population,flag,currencies";
@@ -173,8 +173,8 @@ export async function generateSummaryImage(countries, timestamp) {
     .slice(0, 5);
 
   // 🧩 FIX 1: Use Jimp.Jimp.create for ES module import
-  const image = await Jimp.Jimp.create(800, 600, 0x000000ff); // black background
-  const font = await Jimp.Jimp.loadFont(Jimp.Jimp.FONT_SANS_16_WHITE);
+  const image = await Jimp.create(800, 600, 0x000000ff); // black background
+  const font = await Jimp.loadFont(Jimp.Jimp.FONT_SANS_16_WHITE);
 
   await image.print(font, 20, 30, `Total Countries: ${total}`);
   await image.print(font, 20, 60, `Last Refresh: ${timestamp.toISOString()}`);
@@ -188,8 +188,6 @@ export async function generateSummaryImage(countries, timestamp) {
     await image.print(font, 20, y, text);
     y += 30;
   }
-
-  // 🧩 FIX 2: Ensure folder exists before writing
   fs.mkdirSync("cache", { recursive: true });
   await image.writeAsync("cache/summary.png");
 
