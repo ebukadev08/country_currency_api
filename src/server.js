@@ -1,9 +1,16 @@
+import express from "express";
 import dotenv from "dotenv";
-import app from "./app.js"
-dotenv.config()
+import countryRoutes from "./routes/countryRoutes.js";
+dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const app = express();
+app.use(express.json());
+app.use("/", countryRoutes);
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`server running on port ${PORT}`)
-})
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: "Internal server error" });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
