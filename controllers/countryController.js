@@ -172,9 +172,9 @@ export async function generateSummaryImage(countries, timestamp) {
     .sort((a, b) => b.estimated_gdp - a.estimated_gdp)
     .slice(0, 5);
 
-  // 🧩 FIX 1: Use Jimp.Jimp.create for ES module import
-  const image = await Jimp.create(800, 600, 0x000000ff); // black background
-  const font = await Jimp.loadFont(Jimp.Jimp.FONT_SANS_16_WHITE);
+  // ✅ Correct Jimp usage (no Jimp.Jimp)
+  const image = await new Jimp(800, 600, 0x000000ff); // black background
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // ✅ fix here
 
   await image.print(font, 20, 30, `Total Countries: ${total}`);
   await image.print(font, 20, 60, `Last Refresh: ${timestamp.toISOString()}`);
@@ -182,12 +182,11 @@ export async function generateSummaryImage(countries, timestamp) {
 
   let y = 130;
   for (let i = 0; i < top5.length; i++) {
-    const text = `${i + 1}. ${top5[i].name} - ${top5[i].estimated_gdp.toFixed(
-      2
-    )}`;
+    const text = `${i + 1}. ${top5[i].name} - ${top5[i].estimated_gdp.toFixed(2)}`;
     await image.print(font, 20, y, text);
     y += 30;
   }
+
   fs.mkdirSync("cache", { recursive: true });
   await image.writeAsync("cache/summary.png");
 
