@@ -154,15 +154,18 @@ export const getSummaryImage = async (req, res) => {
 };
 
 export async function generateSummaryImage(countries, timestamp) {
-  const total = countries.length;
-  const top5 = countries
+  const uniqueCountries = Array.from(
+    new Map(countries.map(c => [c.name, c])).values()
+  );
+
+  const total = uniqueCountries.length;
+  const top5 = uniqueCountries
     .filter((c) => c.estimated_gdp)
     .sort((a, b) => b.estimated_gdp - a.estimated_gdp)
     .slice(0, 5);
 
- 
-  const image = await new Jimp(800, 600, 0x000000ff);
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); 
+  const image = await Jimp.create(800, 600, 0x000000ff);
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
 
   await image.print(font, 20, 30, `Total Countries: ${total}`);
   await image.print(font, 20, 60, `Last Refresh: ${timestamp.toISOString()}`);
