@@ -146,12 +146,21 @@ export const getStatus = async (req, res) => {
 };
 
 export const getSummaryImage = async (req, res) => {
-  if (fs.existsSync("cache/summary.png")) {
-    res.sendFile(process.cwd() + "/cache/summary.png");
-  } else {
-    res.status(404).json({ error: "Summary image not found" });
+  const imagePath = process.cwd() + "/cache/summary.png";
+
+  if (fs.existsSync(imagePath)) {
+    return res.sendFile(imagePath);
   }
+  const [countries] = await db.query("SELECT * FROM countries");
+  if (countries.length > 0) {
+    const [[meta]] = await db.query("SELECT * FROM meta LIMIT 1");
+    await generateSummaryImage(countries, meta?.last_refreshed_at || new Date());
+    return res.sendFile(imagePath);
+  }
+
+  res.status(404).json({ error: "Summary image not found" });
 };
+
 
 export async function generateSummaryImage(countries, timestamp) {
   const uniqueCountries = Array.from(
